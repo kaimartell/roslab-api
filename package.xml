@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>roslab_api</name>
+  <version>0.1.0</version>
+  <description>Minimal rosbridge, rosapi, and HTTP API package for exposing an existing ROS 2 environment to the web frontend.</description>
+  <maintainer email="workshop@example.com">Workshop Team</maintainer>
+  <license>Apache-2.0</license>
+
+  <buildtool_depend>ament_python</buildtool_depend>
+
+  <depend>launch</depend>
+  <depend>launch_ros</depend>
+  <depend>rosapi</depend>
+  <depend>rosbridge_server</depend>
+
+  <test_depend>ament_lint_auto</test_depend>
+  <test_depend>ament_lint_common</test_depend>
+
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+</package>
