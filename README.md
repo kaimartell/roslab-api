@@ -1,175 +1,104 @@
 # roslab-api
 
-This folder is a minimal ROS 2 connector package you can publish as its own GitHub repository.
+This package exposes an existing ROS 2 graph to the ROS Lab frontend through rosbridge and rosapi.
 
-It does not include any demo nodes or teaching packages. It only provides:
+It is a small generic connector. Clone it into a ROS 2 workspace that already contains, sources, or can discover the robot nodes and interfaces you want ROS Lab to inspect and interact with.
 
-- `rosbridge_websocket` on a configurable port
-- `rosapi_node` for browser-side graph introspection
-- a small HTTP API on a configurable port so the frontend has stable health and metadata endpoints
+## Purpose
 
-The goal is to let you clone one package into any ROS 2 environment, build it, run it, and expose that environment to the frontend.
+`roslab_api` launches:
 
-## What this package does
+- `rosbridge_server`'s `rosbridge_websocket` on `ws://<host>:9090` by default
+- `rosapi`'s `rosapi_node` for graph introspection used by roslib.js
 
-When launched, it starts:
+Through rosbridge and rosapi, the frontend can list nodes, topics, topic types, services, node publishers/subscribers/services, and service types. Action support is best-effort; the frontend may infer actions from `/_action/` topics and services when explicit action-server listing is unavailable.
 
-- `rosbridge_websocket`
-- `rosapi_node`
-- `roslab_api` HTTP server
+## Install
 
-It does not start or manage demos.
-It exposes the ROS graph that is already running in your environment and ROS domain.
-
-## What this package does not do
-
-- no learner demo packages
-- no launch catalog
-- no demo start/stop manager
-- no concept-code session runner
-
-The HTTP API is intentionally minimal. Launch-related endpoints return empty data or "not configured" responses.
-
-## Recommended use
-
-Clone this repository into the `src/` directory of the ROS workspace you want to expose.
-
-That keeps the bridge in the same environment as your real nodes, custom message packages, and launch files.
-
-## Existing workspace flow
-
-If you already have a workspace such as `~/my_ros_ws`:
+From an existing ROS 2 workspace:
 
 ```bash
-cd ~/my_ros_ws/src
-git clone <your-repo-url> roslab_api_repo
-cd ..
-source /opt/ros/humble/setup.bash
-rosdep install --from-paths src/roslab_api_repo --ignore-src -r -y --rosdistro humble
-colcon build --packages-select roslab_api
+cd ~/ros2_ws/src
+git clone https://github.com/kaimartell/roslab-api.git
+cd ~/ros2_ws
+rosdep install --from-paths src --ignore-src -r -y
+colcon build --symlink-install
 source install/setup.bash
-ros2 launch roslab_api bridge_api.launch.py
 ```
 
-Then point the frontend at:
+If your ROS graph uses custom message, service, or action types, source the workspace that provides those interfaces before launching this bridge.
 
-- `ws://<host>:9090`
-- `http://<host>:8000`
+## Run
 
-## Standalone workspace flow
-
-If you want a small standalone bridge workspace:
+Start the connector with the default WebSocket endpoint:
 
 ```bash
-mkdir -p ~/ros2_bridge_ws/src
-cd ~/ros2_bridge_ws/src
-git clone <your-repo-url> roslab_api_repo
-cd ..
-source /opt/ros/humble/setup.bash
-rosdep install --from-paths src --ignore-src -r -y --rosdistro humble
-colcon build --packages-select roslab_api
-source install/setup.bash
-ros2 launch roslab_api bridge_api.launch.py
+ros2 launch roslab_api frontend_bridge.launch.py
 ```
 
-## Important runtime note
-
-If the target environment has custom message, service, or action types, source that environment before launching the bridge so `rosbridge` and `rosapi` can resolve those interfaces.
-
-Typical order:
+Bind to a custom address or port:
 
 ```bash
-source /opt/ros/humble/setup.bash
-source /path/to/your/main_ws/install/setup.bash
-source /path/to/bridge_ws/install/setup.bash
-ros2 launch roslab_api bridge_api.launch.py
+ros2 launch roslab_api frontend_bridge.launch.py address:=127.0.0.1 port:=9091
 ```
 
-If you clone this package directly into the target workspace and build it there, that is already handled.
+Launch arguments:
 
-## Ports
+- `address`, default `0.0.0.0`
+- `port`, default `9090`
+- `enable_rosapi`, default `true`
 
-Default ports:
+`rosapi_node` provides ROS graph metadata over rosbridge, such as nodes, topics, services, and type information. Keep it enabled when using ROS Lab's Explore view or other browser tools that need graph introspection; disable it only if you want a narrower bridge that allows topic/service interaction without rosapi metadata services.
 
-- rosbridge: `9090`
-- HTTP API: `8000`
+## Connect Frontend
 
-Override them at launch:
+Use these rosbridge WebSocket URLs in ROS Lab:
+
+- Local browser and ROS host: `ws://localhost:9090`
+- Browser on another machine: `ws://<host-ip>:9090`
+
+The frontend subscribes to selected topics using their reported message type, publishes raw JSON messages to selected topics, calls selected services with raw JSON requests, and can send raw JSON action goals when action name/type information is available.
+
+## Validation
+
+After launch:
 
 ```bash
-ros2 launch roslab_api bridge_api.launch.py rosbridge_port:=9091 api_port:=8001
+ros2 node list
 ```
 
-Bind addresses can also be changed:
+The node list should include `rosbridge_websocket` and `rosapi_node` when `enable_rosapi:=true`.
 
-```bash
-ros2 launch roslab_api bridge_api.launch.py rosbridge_address:=0.0.0.0 api_host:=0.0.0.0
-```
+In the browser or frontend:
 
-## Helper scripts
+- ROS Lab should show `connected`
+- The Explore view should list nodes, topics, and services from the running ROS graph
 
-Two optional helper scripts are included:
+## Network Notes
 
-- `scripts/install_dependencies.sh`
-- `scripts/run_bridge_api.sh`
+- Port `9090` must be reachable from the browser machine.
+- If using the GitHub Pages HTTPS-hosted frontend, browsers may block plain `ws://`; use a local HTTP-served frontend or provide a `wss://` TLS reverse proxy.
+- This connector does not authenticate rosbridge. Use it only on trusted networks unless you add your own network security.
 
-`install_dependencies.sh` installs `rosdep` and package dependencies for this package.
+## Scope
 
-`run_bridge_api.sh` launches the bridge after your ROS environment is already sourced.
+This repository is the generic ROS Lab connector only.
 
-## HTTP API
+It does not start robot demos, manage launch files, provide curated lesson metadata, or serve node code excerpts. The optional ROS Lab HTTP API at `http://<same-host>:8000` is intentionally omitted, so demo controls and curated code panels are unavailable in this generic connector.
 
-Exposed endpoints:
-
-- `GET /api/health`
-- `GET /api/launch/demos`
-- `GET /api/launch/status`
-- `GET /api/system/metadata`
-
-Behavior:
-
-- `/api/launch/demos` returns an empty list
-- `/api/launch/status` returns an empty list
-- `/api/system/metadata` returns lightweight metadata for the bridge nodes only
-
-## Push to GitHub
-
-If you want to publish this folder as its own repository:
-
-```bash
-cd /Users/kaimartell/Desktop/Tufts/MSME/Thesis/spring/ros2-education-platform/roslab-api
-git init
-git add .
-git commit -m "Add roslab API bridge package"
-git branch -M main
-git remote add origin https://github.com/<your-user>/roslab-api.git
-git push -u origin main
-```
-
-If you prefer creating the repo first in the GitHub UI:
-
-1. Create a new empty repository named `roslab-api`
-2. Do not initialize it with a README, `.gitignore`, or license
-3. Run the commands above
-
-If you use GitHub CLI instead:
-
-```bash
-cd /Users/kaimartell/Desktop/Tufts/MSME/Thesis/spring/ros2-education-platform/roslab-api
-git init
-git add .
-git commit -m "Add roslab API bridge package"
-gh repo create roslab-api --public --source=. --remote=origin --push
-```
-
-## Files to publish
-
-Publish the contents of this folder as the GitHub repository root:
+## Repository Layout
 
 ```text
 roslab-api/
+├── launch/
+│   └── frontend_bridge.launch.py
+├── roslab_api/
+│   └── __init__.py
+├── package.xml
+├── setup.cfg
+└── setup.py
 ```
 
-## Summary
+## License
 
-This package is the generic connector layer only. It is meant to sit inside an arbitrary ROS 2 workspace and expose that live ROS environment to the web frontend over standard ports.
+Apache-2.0

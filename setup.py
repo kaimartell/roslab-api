@@ -14,14 +14,10 @@ setup(
     ],
     install_requires=["setuptools"],
     zip_safe=True,
-    maintainer="Workshop Team",
-    maintainer_email="workshop@example.com",
-    description="Minimal rosbridge and API package for an existing ROS 2 environment.",
+    maintainer="ROS Lab Maintainers",
+    maintainer_email="roslab@example.com",
+    description="Generic rosbridge and rosapi connector for the ROS Lab frontend.",
     license="Apache-2.0",
     tests_require=["pytest"],
-    entry_points={
-        "console_scripts": [
-            "bridge_api_server = roslab_api.api_server:main",
-        ],
-    },
+    entry_points={},
 )

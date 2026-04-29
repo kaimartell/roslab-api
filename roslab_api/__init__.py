@@ -1,1 +1,1 @@
-"""Minimal ROS 2 web bridge package."""
+"""ROS Lab frontend bridge package."""

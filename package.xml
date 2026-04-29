@@ -2,8 +2,8 @@
 <package format="3">
   <name>roslab_api</name>
   <version>0.1.0</version>
-  <description>Minimal rosbridge, rosapi, and HTTP API package for exposing an existing ROS 2 environment to the web frontend.</description>
-  <maintainer email="workshop@example.com">Workshop Team</maintainer>
+  <description>Generic rosbridge and rosapi connector for exposing an existing ROS 2 environment to the ROS Lab frontend.</description>
+  <maintainer email="roslab@example.com">ROS Lab Maintainers</maintainer>
   <license>Apache-2.0</license>
 
   <buildtool_depend>ament_python</buildtool_depend>
