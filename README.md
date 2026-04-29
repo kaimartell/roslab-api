@@ -52,7 +52,7 @@ Launch arguments:
 
 ## Connect Frontend
 
-Use these rosbridge WebSocket URLs in ROS Lab:
+Use these rosbridge WebSocket URLs in roslab, hosted at https://kaimartell.github.io/roslab/:
 
 - Local browser and ROS host: `ws://localhost:9090`
 - Browser on another machine: `ws://<host-ip>:9090`
